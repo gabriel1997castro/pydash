@@ -3,6 +3,7 @@ from r2a.ir2a import IR2A
 import random
 import datetime
 
+import json
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
@@ -36,6 +37,7 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         self.time_of_request = []
         self.bit_len = []
         self.connection_speed_arr = []
+        self.config_parameters = {}
 
     def add_time(self, time_to_add):
         self.time_of_request += [time_to_add]
@@ -59,21 +61,21 @@ class R2A404BrainNotFoundFuzzy(IR2A):
     def handle_segment_size_request(self, msg):
 
         # Fórmula usada
-
         moving_avarage_factor = 5
         buffer_now = self.whiteboard.get_playback_buffer_size()
         speed_now = 0
         time_stop = datetime.datetime.now()
-        max_speed = 1
+        max_speed = 2
         quality_moving_avg = 0
         medium_quality = 8
+        medium_conn_speed = -1
         self.add_time(time_stop.timestamp())
         if len(self.time_of_request) > 2:
             time_to_request = self.time_of_request[-1] - self.time_of_request[-2]
-            speed_now = self.bit_len[-1] / \
-                (time_to_request)
+            speed_now = self.bit_len[-1] / (time_to_request)
             self.add_speed(speed_now)
             max_speed = max(self.connection_speed_arr)
+            medium_conn_speed = avg(self.connection_speed_arr[-20:])
         if len(buffer_now) > 0:
             buffer_now = buffer_now[-1][1]
         else:
@@ -84,7 +86,7 @@ class R2A404BrainNotFoundFuzzy(IR2A):
             qualityArr = qualityArr[-moving_avarage_factor:]
             qualityArr = [item[1] for item in qualityArr]
             quality_moving_avg = avg(qualityArr)
-            medium_quality = medium_quality[-10:]
+            medium_quality = medium_quality[-20:]
             medium_quality = [item[1] for item in medium_quality]
             medium_quality = avg_the_last_is_the_most_significant(medium_quality)
         else:
@@ -94,22 +96,28 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         connection_speed = ctrl.Antecedent(np.arange(0, max_speed, 1), 'connection_speed')
         buffer = ctrl.Antecedent(np.arange(0, 61, 1), 'buffer')
         quality = ctrl.Consequent(np.arange(0, 20, 1), 'quality')
-        connection_speed.automf(3)
+        # connection_speed.automf(3)
 
-        buffer['low'] = fuzz.trimf(buffer.universe, [0, 0, 30])
-        buffer['medium'] = fuzz.trimf(buffer.universe, [0, 30, 60])
-        buffer['high'] = fuzz.trimf(buffer.universe, [30, 60, 60])
+        if medium_conn_speed == -1:
+            medium_conn_speed = max_speed / 2
+        connection_speed['poor'] = fuzz.trimf(connection_speed.universe, [0, 0, int(max_speed)])
+        connection_speed['average'] = fuzz.trimf(connection_speed.universe, [0, int(medium_conn_speed), int(max_speed)])
+        connection_speed['good'] = fuzz.trimf(connection_speed.universe, [int(medium_conn_speed), int(max_speed), int(max_speed)])
 
-        quality['low'] = fuzz.trimf(quality.universe, [0, 0, medium_quality])
-        quality['medium'] = fuzz.trimf(quality.universe, [0, medium_quality, 19])
-        quality['high'] = fuzz.gaussmf(quality.universe, 19, 3)
+        buffer['low'] = fuzz.trimf(buffer.universe, [0, 0, 40])
+        buffer['medium'] = fuzz.trimf(buffer.universe, [0, 40, 60])
+        buffer['high'] = fuzz.trimf(buffer.universe, [40, 40, 60])
+
+        quality['low'] = fuzz.trimf(quality.universe, [0, 0, int(medium_quality)])
+        quality['medium'] = fuzz.trimf(quality.universe, [0, int(medium_quality), 19])
+        quality['high'] = fuzz.trimf(quality.universe, [int(medium_quality), 19, 19])
 
         # quality.view()
         # wait = input("Press Enter to continue.")
 
         rule1 = ctrl.Rule(connection_speed['poor'] | buffer['low'], quality['low'])
-        rule2 = ctrl.Rule(connection_speed['average'], quality['medium'])
-        rule3 = ctrl.Rule(connection_speed['good'] & buffer['medium'], quality['high'])
+        rule2 = ctrl.Rule(connection_speed['average'] | buffer['medium'], quality['medium'])
+        rule3 = ctrl.Rule(connection_speed['good'] | buffer['high'], quality['high'])
 
         quality_ctrl = ctrl.ControlSystem([rule1, rule2, rule3])
         new_quality = ctrl.ControlSystemSimulation(quality_ctrl)
@@ -128,7 +136,9 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         self.send_up(msg)
 
     def initialize(self):
-        pass
+        with open('dash_client.json') as f:
+            self.config_parameters = json.load(f)
+        
 
     def finalization(self):
         pass
