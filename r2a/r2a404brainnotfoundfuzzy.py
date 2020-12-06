@@ -93,8 +93,10 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         else:
             quality_moving_avg = 0
 
-
-        connection_speed = ctrl.Antecedent(np.arange(0, max_speed, 1), 'connection_speed')
+        max_speed_step = 1
+        if max_speed > 100:
+            max_speed_step = max_speed / 40
+        connection_speed = ctrl.Antecedent(np.arange(0, max_speed, max_speed_step), 'connection_speed')
         buffer = ctrl.Antecedent(np.arange(0, 61, 1), 'buffer')
         quality = ctrl.Consequent(np.arange(0, 20, 1), 'quality')
         # connection_speed.automf(3)
@@ -104,10 +106,10 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         connection_speed['poor'] = fuzz.trimf(connection_speed.universe, [0, 0, int(max_speed)])
         connection_speed['average'] = fuzz.trimf(connection_speed.universe, [0, int(medium_conn_speed), int(max_speed)])
         connection_speed['good'] = fuzz.trimf(connection_speed.universe, [int(medium_conn_speed), int(max_speed), int(max_speed)])
-
-        buffer['low'] = fuzz.trimf(buffer.universe, [0, 0, 40])
-        buffer['medium'] = fuzz.trimf(buffer.universe, [0, 40, 60])
-        buffer['high'] = fuzz.trimf(buffer.universe, [40, 40, 60])
+        medium_buffer_size = 40
+        buffer['low'] = fuzz.trimf(buffer.universe, [0, 0, medium_buffer_size])
+        buffer['medium'] = fuzz.trimf(buffer.universe, [0, medium_buffer_size, 60])
+        buffer['high'] = fuzz.trimf(buffer.universe, [medium_buffer_size, 60, 60])
 
         quality['low'] = fuzz.trimf(quality.universe, [0, 0, int(medium_quality)])
         quality['medium'] = fuzz.trimf(quality.universe, [0, int(medium_quality), 19])

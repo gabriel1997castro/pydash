@@ -69,16 +69,16 @@ class R2A404BrainNotFound(IR2A):
             quality = 0
         score = 0
         quality_rate = 1.2
-        buffer_rate = 0.8
-        speed_rate = 2
+        buffer_rate = 1
+        speed_rate = 5
         time_rate = 2
         score_rate = 4
         q = quality
         if quality == 0:
-            q = 0.1
-        score += time_rate * quality_rate * normalize(0, 19, 1/q)
+            q = 0.05
+        # score += quality_rate * normalize(0, 19, q)
         if len(self.connection_speed) > 2:
-            score += 1/normalize_negative(0, 1.8, time_to_request)
+            # score += 1/normalize_negative(0, 1.8, time_to_request)
             score += speed_rate * \
                 normalize_negative(min(self.connection_speed),
                                    max(self.connection_speed), speed)
@@ -88,8 +88,7 @@ class R2A404BrainNotFound(IR2A):
 
         score_total = score_rate * score
         if len(qualityArr) > 2:
-            print('quality arr', qualityArr)
-            new_quality = avg(qualityArr+[score_total])
+            new_quality = avg(qualityArr+[qualityArr[-1] + score_total])
         else:
             new_quality = score_total
         print('new quality', new_quality)
@@ -98,7 +97,7 @@ class R2A404BrainNotFound(IR2A):
         if new_quality < 0:
             new_quality = 0
 
-        msg.add_quality_id(self.qi[int(new_quality)])
+        msg.add_quality_id(self.qi[round(new_quality)])
         self.send_down(msg)
 
     def handle_segment_size_response(self, msg):
