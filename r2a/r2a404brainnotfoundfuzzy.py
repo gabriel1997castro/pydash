@@ -38,6 +38,7 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         self.bit_len = []
         self.connection_speed_arr = []
         self.config_parameters = {}
+        self.medium_buffer = 40
 
     def add_time(self, time_to_add):
         self.time_of_request += [time_to_add]
@@ -116,8 +117,8 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         # wait = input("Press Enter to continue.")
 
         rule1 = ctrl.Rule(connection_speed['poor'] | buffer['low'], quality['low'])
-        rule2 = ctrl.Rule(connection_speed['average'] | buffer['medium'], quality['medium'])
-        rule3 = ctrl.Rule(connection_speed['good'] | buffer['high'], quality['high'])
+        rule2 = ctrl.Rule(connection_speed['average'] | (buffer['medium'] | buffer['high']), quality['medium'])
+        rule3 = ctrl.Rule(connection_speed['good'] & buffer['high'], quality['high'])
 
         quality_ctrl = ctrl.ControlSystem([rule1, rule2, rule3])
         new_quality = ctrl.ControlSystemSimulation(quality_ctrl)
