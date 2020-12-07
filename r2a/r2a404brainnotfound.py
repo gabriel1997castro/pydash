@@ -64,34 +64,21 @@ class R2A404BrainNotFound(IR2A):
         if len(qualityArr) > 0:
             qualityArr = qualityArr[-moving_avarage_factor:]
             qualityArr = [item[1] for item in qualityArr]
-            quality = avg(qualityArr)
-        else:
-            quality = 0
+        
         score = 0
-        quality_rate = 1.2
         buffer_rate = 1
         speed_rate = 5
-        time_rate = 2
         score_rate = 4
-        q = quality
-        if quality == 0:
-            q = 0.05
-        # score += quality_rate * normalize(0, 19, q)
-        if len(self.connection_speed) > 2:
-            # score += 1/normalize_negative(0, 1.8, time_to_request)
-            score += speed_rate * \
-                normalize_negative(min(self.connection_speed),
-                                   max(self.connection_speed), speed)
-        # score -= 3
-        score += buffer_rate * normalize_negative(0, 30, buffer)
 
+        if len(self.connection_speed) > 2:
+            score += speed_rate * normalize_negative(min(self.connection_speed), max(self.connection_speed), speed)
+        score += buffer_rate * normalize_negative(0, 30, buffer)
 
         score_total = score_rate * score
         if len(qualityArr) > 2:
             new_quality = avg(qualityArr+[qualityArr[-1] + score_total])
         else:
             new_quality = score_total
-        print('new quality', new_quality)
         if new_quality > 19:
             new_quality = 19
         if new_quality < 0:
