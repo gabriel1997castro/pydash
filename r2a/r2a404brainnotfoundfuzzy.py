@@ -105,7 +105,7 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         if len(self.time_of_request) < 4:
             medium_buffer_size = 0.5 * max_buffer_size
         else:
-            medium_buffer_size =  0.6 * max_buffer_size - (1.2 * max_buffer_size*(self.time_of_request[-1] - self.time_of_request[0]) / self.duration)
+            medium_buffer_size =  0.6 * max_buffer_size - (1 * max_buffer_size*(self.time_of_request[-1] - self.time_of_request[0]) / self.duration)
             if medium_buffer_size < 0.2 * max_buffer_size:
                 medium_buffer_size = 0.2 * max_buffer_size
             print('buffer -----------', medium_buffer_size)
@@ -134,7 +134,7 @@ class R2A404BrainNotFoundFuzzy(IR2A):
 
         # quality.view()
         # wait = input("Press Enter to continue.")
-        rule1 = ctrl.Rule(connection_speed['poor'] & buffer['low'], quality['low'])
+        rule1 = ctrl.Rule(connection_speed['poor'] | buffer['low'], quality['low'])
         rule2 = ctrl.Rule(connection_speed['average'], quality['medium'])
         # rule2 = ctrl.Rule(connection_speed['average'] & buffer['medium'], quality['medium'])
         rule3 = ctrl.Rule(connection_speed['good'] & buffer['low'], quality['medium'])
