@@ -78,7 +78,7 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         throughput = 0
         max_throughput = 2
         quality_moving_avg = 0
-        # medium_quality = 8 # Valor inicial já que a qualidade média é calculada em tempo real usando os últimos 20 items
+        medium_quality = 8 # Valor inicial já que a qualidade média é calculada em tempo real usando os últimos 20 items
         medium_connection_throughput = -1
         if len(self.time_of_request) > 2:
             time_to_request = self.time_of_request[-1] - self.time_of_request[-2]
@@ -92,13 +92,13 @@ class R2A404BrainNotFoundFuzzy(IR2A):
             buffer_now = 0
         qualityArr = self.whiteboard.get_playback_qi()
         if len(qualityArr) > 0:
-            # medium_quality = qualityArr
+            medium_quality = qualityArr
             qualityArr = qualityArr[-moving_avarage_factor:]
             qualityArr = [item[1] for item in qualityArr]
             quality_moving_avg = avg(qualityArr)
-            # medium_quality = medium_quality[-20:]
-            # medium_quality = [item[1] for item in medium_quality]
-            # medium_quality = avg_the_last_is_the_most_significant(medium_quality)
+            medium_quality = medium_quality[-20:] # Valor médio da qualidade
+            medium_quality = [item[1] for item in medium_quality]
+            medium_quality = avg_the_last_is_the_most_significant(medium_quality)
         else:
             quality_moving_avg = 0
 
@@ -106,7 +106,7 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         if len(self.time_of_request) < 4:
             medium_buffer_size = 0.5 * max_buffer_size
         else:
-            medium_buffer_size =  0.6 * max_buffer_size - (1 * max_buffer_size*(self.time_of_request[-1] - self.time_of_request[0]) / self.duration)
+            medium_buffer_size =  0.6 * max_buffer_size - (0.4 * max_buffer_size*(self.time_of_request[-1] - self.time_of_request[0]) / self.duration)
             if medium_buffer_size < 0.2 * max_buffer_size:
                 medium_buffer_size = 0.2 * max_buffer_size
             print('buffer -----------', medium_buffer_size)
@@ -129,9 +129,9 @@ class R2A404BrainNotFoundFuzzy(IR2A):
         buffer['medium'] = fuzz.trimf(buffer.universe, [0, round(medium_buffer_size), max_buffer_size])
         buffer['high'] = fuzz.trimf(buffer.universe, [round(medium_buffer_size), max_buffer_size, max_buffer_size])
 
-        quality['low'] = fuzz.trimf(quality.universe, [0, 0, round(self.qualities_len/2)])
-        quality['medium'] = fuzz.trimf(quality.universe, [0, round(self.qualities_len/2), self.qualities_len - 1])
-        quality['high'] = fuzz.trimf(quality.universe, [round(self.qualities_len/2), self.qualities_len - 1, self.qualities_len - 1])
+        quality['low'] = fuzz.trimf(quality.universe, [0, 0, round(medium_quality)])
+        quality['medium'] = fuzz.trimf(quality.universe, [0, round(medium_quality), self.qualities_len - 1])
+        quality['high'] = fuzz.trimf(quality.universe, [round(medium_quality), self.qualities_len - 1, self.qualities_len - 1])
 
         # quality.view()
         # wait = input("Press Enter to continue.")
